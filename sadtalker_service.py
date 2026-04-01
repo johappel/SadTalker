@@ -110,4 +110,4 @@ def serve_result(filename):
 if __name__ == '__main__':
     print("Starting SadTalker Service on port 5001...")
     print(f"Checkpoints: {CHECKPOINTS_DIR}")
-    app.run(debug=False, host='0.0.0.0', port=5001, threaded=True)
+    app.run(debug=False, host='127.0.0.1', port=5001, threaded=True)
