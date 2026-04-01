@@ -18,9 +18,9 @@ files = [
 
 def read_template_pair_list(path):
     pairs = pd.read_csv(path, sep=' ', header=None).values
-    t1 = pairs[:, 0].astype(np.int)
-    t2 = pairs[:, 1].astype(np.int)
-    label = pairs[:, 2].astype(np.int)
+    t1 = pairs[:, 0].astype(np.int32)
+    t2 = pairs[:, 1].astype(np.int32)
+    label = pairs[:, 2].astype(np.int32)
     return t1, t2, label
 
 
@@ -70,3 +70,4 @@ plt.ylabel('True Positive Rate')
 plt.title('ROC on IJB')
 plt.legend(loc="lower right")
 print(tpr_fpr_table)
+
