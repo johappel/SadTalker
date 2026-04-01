@@ -30,6 +30,13 @@ def health():
 def generate():
     """Generate talking avatar with head pose"""
     data = request.get_json()
+    print(f"\n{'='*60}")
+    print(f"SADTALKER SERVICE RECEIVED:")
+    print(f"  audio_path: {data.get('audio_path')}")
+    print(f"  image_path: {data.get('image_path')}")
+    print(f"  pose_style: {data.get('pose_style')}")
+    print(f"  expression_scale: {data.get('expression_scale')}")
+    print(f"{'='*60}\n")
 
     if not data:
         return jsonify({'error': 'No data provided'}), 400
@@ -50,6 +57,14 @@ def generate():
 
     if not os.path.exists(audio_path):
         return jsonify({'error': f'Audio not found: {audio_path}'}), 400
+    
+    # Verify audio file size
+    audio_size = os.path.getsize(audio_path)
+    print(f"Audio file size: {audio_size} bytes ({audio_size/1024:.1f} KB)")
+    
+    # Verify audio file size
+    audio_size = os.path.getsize(audio_path)
+    print(f"Audio file size: {audio_size} bytes ({audio_size/1024:.1f} KB)")
 
     job_id = uuid.uuid4().hex
     output_path = str(RESULTS_DIR / f"{job_id}_output.mp4")
@@ -82,13 +97,28 @@ def generate():
             'stdout': result.stdout
         }), 500
 
-    # Find the generated video (SadTalker creates timestamped mp4 files in results dir)
+    # Find the generated video (SadTalker creates timestamped mp4 files)
+    # Parse stdout to find the exact output path
     video_url = None
-    for f in RESULTS_DIR.iterdir():
-        if f.is_file() and f.suffix == '.mp4' and f.name.startswith('20'):
-            shutil.move(str(f), output_path)
+    
+    # Try to find the output path from SadTalker stdout
+    for line in result.stdout.split('\n'):
+        if 'The generated video is named:' in line:
+            generated_path = line.split('named:')[1].strip()
+            if os.path.exists(generated_path):
+                shutil.move(generated_path, output_path)
+                video_url = f'/results/{job_id}_output.mp4'
+                print(f"Found video via stdout: {generated_path}")
+                break
+    
+    # Fallback: find the most recently modified mp4 file
+    if not video_url:
+        mp4_files = [f for f in RESULTS_DIR.iterdir() if f.is_file() and f.suffix == '.mp4']
+        if mp4_files:
+            newest = max(mp4_files, key=lambda f: f.stat().st_mtime)
+            shutil.move(str(newest), output_path)
             video_url = f'/results/{job_id}_output.mp4'
-            break
+            print(f"Found video via mtime: {newest}")
 
     if not video_url:
         return jsonify({
